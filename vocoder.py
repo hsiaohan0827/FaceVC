@@ -5,7 +5,7 @@ import pickle
 from synthesis import build_model
 from synthesis import wavegen
 
-model_id = "Gwarp_norepar"
+model_id = "reb_stage3_nofixGpse"
 spect_vc = pickle.load(open(os.path.join('wav', model_id, 'results.pkl'), 'rb'))
 # spect_vc = pickle.load(open("results.pkl", 'rb'))
 device = torch.device("cuda")

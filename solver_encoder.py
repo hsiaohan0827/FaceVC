@@ -1,4 +1,4 @@
-from model_vc import Generator_speech, Generator_face, Domain_Trans
+from model_vc import Generator, Domain_Trans, FaceEncoder
 import torch
 import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm_
@@ -74,6 +74,12 @@ class Solver(object):
         
             self.Warp = Domain_Trans().to(self.device)
             self.w_optimizer = torch.optim.Adam(self.Warp.parameters(), 0.0001)
+        elif self.stage == 4:
+            g_ref_checkpoint = torch.load(self.refG_path)
+            self.G_pse = FaceEncoder(self.dim_neck_pse, self.dim_emb_pse, self.dim_pre_pse, self.freq_pse).to(self.device)
+            self.G_ref = Generator(self.dim_neck_ref, self.dim_emb_ref, self.dim_pre_ref, self.freq_ref).eval().to(self.device)
+            self.G_ref.load_state_dict(g_ref_checkpoint)
+            self.g_optimizer = torch.optim.Adam(self.G_pse.parameters(), 0.0001)
         
     def reset_grad(self):
         """Reset the gradient buffers."""
@@ -81,6 +87,8 @@ class Solver(object):
             self.g_optimizer.zero_grad()
         elif self.stage == 3:
             self.w_optimizer.zero_grad()
+        elif self.stage == 4:
+            self.g_optimizer.zero_grad()
       
     
     #=====================================================================================================================================#
@@ -97,6 +105,8 @@ class Solver(object):
             keys = ['G/loss_id','G/loss_id_psnt','G/loss_cd']
         elif self.stage == 3:
             keys = ['W/loss_warping']
+        elif self.stage == 4:
+            keys = ['G/loss_warping']
             
         # Start training.
         print('Start training...')
@@ -108,7 +118,7 @@ class Solver(object):
             # =================================================================================== #
 
             # Fetch data.
-            if self.stage == 1 or self.stage == 3:
+            if self.stage == 1 or self.stage == 3 or self.stage == 4:
                 try:
                     x_real, emb_org, ge2e_pack, emb_sph = next(data_iter)
                 except:
@@ -138,6 +148,8 @@ class Solver(object):
                     self.G_ref = self.G_ref.train()
                 elif self.stage == 3:
                     self.Warp = self.Warp.train()
+                elif self.stage == 4:
+                    self.G_pse = self.G_pse.train()
 
                 # =================================================================================== #
                 #                               2-1. Train G                                          #
@@ -219,10 +231,24 @@ class Solver(object):
                     self.reset_grad()
                     w_loss.backward()
                     self.w_optimizer.step()
-
+                    
                     loss = {}
                     loss['W/loss_warping'] = w_loss.item()
                     self.writer.add_scalar('W/loss_warping', w_loss.item(), i+1)
+                    
+                elif self.stage == 4:
+                    sph_spk = self.G_ref(None, None, emb_sph, None)
+                    face_spk = self.G_pse(emb_org)
+                    
+                    w_loss = F.mse_loss(sph_spk, face_spk)
+                
+                    self.reset_grad()
+                    w_loss.backward()
+                    self.g_optimizer.step()
+                    
+                    loss = {}
+                    loss['G/loss_warping'] = w_loss.item()
+                    self.writer.add_scalar('G/loss_warping', w_loss.item(), i+1)
                 
                 # =================================================================================== #
                 #                                 4. Miscellaneous                                    #
@@ -240,12 +266,16 @@ class Solver(object):
                         log += ", {}: {:.4f}".format(tag, loss[tag])
                     print(log)
                 if (i+1) % self.save_step == 0:
-                    if self.stage == 1 or self.stage == 2:
-                        torch.save(self.G_src.state_dict(), os.path.join('checkpoint', self.model_id, 'G.ckpt'))
+                    if self.stage == 1:
+                        torch.save(self.G_pse.state_dict(), os.path.join('checkpoint', self.model_id, 'G.ckpt'))
+                        torch.save(self.g_optimizer.state_dict(), os.path.join('checkpoint', self.model_id, 'op_g.ckpt'))
+                    elif self.stage == 2:
+                        torch.save(self.G_ref.state_dict(), os.path.join('checkpoint', self.model_id, 'G.ckpt'))
                         torch.save(self.g_optimizer.state_dict(), os.path.join('checkpoint', self.model_id, 'op_g.ckpt'))
                     elif self.stage == 3:
                         torch.save(self.Warp.state_dict(), os.path.join('checkpoint', self.model_id, 'W.ckpt'))
-                        torch.save(self.w_optimizer.state_dict(), os.path.join('checkpoint', self.model_id, 'op_w.ckpt'))
+                    elif self.stage == 4:
+                        torch.save(self.G_pse.state_dict(), os.path.join('checkpoint', self.model_id, 'G.ckpt'))
                     
                     print('Save ckpt in: '+os.path.join('checkpoint', self.model_id))
                 

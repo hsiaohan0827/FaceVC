@@ -231,9 +231,9 @@ class Postnet(nn.Module):
 class Generator(nn.Module):
     """Generator network."""
     def __init__(self, dim_neck, dim_emb, dim_pre, freq):
-        super(Generator_speech, self).__init__()
+        super(Generator, self).__init__()
         
-        self.attn = Self_Attn(dim_emb, 256)
+        self.attn = Self_Attn(dim_emb, dim_emb)
         self.encoder = Encoder(dim_neck, dim_emb, freq)
         self.decoder = Decoder(dim_neck, 256, dim_pre)
         self.postnet = Postnet()
@@ -247,23 +247,25 @@ class Generator(nn.Module):
     def forward(self, x, c_org, c_trg, ge2e_pack): 
     # ge2e_pack: spk_num * emb_per_spk * emb_size; domain_input: None in conversion phase; alpha in DAT
         
-        codes = self.encoder(x, c_org)
-        if c_trg is None:
-            return torch.cat(codes, dim=-1)
+        if x is None:
+            return c_trg
+       
         if ge2e_pack is not None:
             ge2e_ip = []
             for emb in ge2e_pack:
+                emb, attn_map = self.attn(emb)
                 emb_V2A, _, _ = self.reparam(emb)
                 ge2e_ip.append(emb_V2A)
             return torch.stack(ge2e_ip, dim=0)
     
 
+        codes = self.encoder(x, c_org)
+        if c_trg is None:
+            return torch.cat(codes, dim=-1)
+            
         c_trg, attn_map = self.attn(c_trg)
         c_trg, mu, logvar = self.reparam(c_trg)
         
-        if x is None:
-            return c_trg
-       
         tmp = []
         for code in codes:
             tmp.append(code.unsqueeze(1).expand(-1,int(x.size(1)/len(codes)),-1))
@@ -290,3 +292,26 @@ class Domain_Trans(nn.Module):
     def forward(self, feat): 
         feat = self.trans_layer(feat)
         return feat
+
+class FaceEncoder(nn.Module):
+    """Generator network."""
+    def __init__(self, dim_neck, dim_emb, dim_pre, freq):
+        super(FaceEncoder, self).__init__()
+        
+        self.attn = Self_Attn(dim_emb, dim_emb)
+        self.reparam = Repara(dim_emb, hidden_sizes = 320, latent_size = 256)
+        self.trans_layer = nn.Linear(256, 256)
+        
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5*logvar)
+        eps = torch.randn_like(std)
+        return mu + eps*std
+        
+    def forward(self, c_trg): 
+
+        c_trg, attn_map = self.attn(c_trg)
+        c_trg, mu, logvar = self.reparam(c_trg)
+        c_trg = self.trans_layer(c_trg)
+        
+        
+        return c_trg

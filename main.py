@@ -1,10 +1,9 @@
 import os
 import argparse
 from solver_encoder import Solver
-from data_loader_clean import get_loader_clean
+# from data_loader_clean import get_loader_clean
 from data_loader_noisy import get_loader_noisy
 from torch.backends import cudnn
-
 
 def str2bool(v):
     return v.lower() in ('true')
@@ -13,24 +12,22 @@ def main(config):
     # For fast training.
     cudnn.benchmark = True
 
-    # Data loader.
-    vcc_loader_clean = get_loader_clean(config.batch_size, config.len_crop)
+    # Data loader
+    # vcc_loader_clean = get_loader_clean(config.batch_size, config.len_crop)
     vcc_loader_noisy = get_loader_noisy(config.batch_size, config.len_crop)
     
-    if config.stage == 1 or config.stage == 3:
+    if config.stage == 1 or config.stage == 3 or config.stage == 4:
         solver = Solver(vcc_loader_noisy, config)
-    elif config.stage == 2:
-        solver = Solver(vcc_loader_clean, config)
+    # elif config.stage == 2:
+        # solver = Solver(vcc_loader_clean, config)
 
     solver.train()
-        
-    
         
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stage', type=int, default=3)
+    parser.add_argument('--stage', type=int, default=4)
 
     ### For training stage I, revise argument of line 39-44, 59-67 ###
     ### For training stage II, revise argument of line 48-52, 59-67 ###
@@ -57,13 +54,13 @@ if __name__ == '__main__':
     # Training configuration.
     ### Loading pretrained pseudo generator (from stage I) / referance generator (from stage II) for stage III ###
     parser.add_argument('--pseG_path', type=str, default='pretrain_VC/pseG/G.ckpt', help='pseG model name')
-    parser.add_argument('--refG_path', type=str, default='pretrain_VC/refG/G.ckpt', help='refG model name')
+    parser.add_argument('--refG_path', type=str, default='pretrain_VC/refG/tune1.ckpt', help='refG model name')
 
     parser.add_argument('--batch_size', type=int, default=2, help='mini-batch size')
     parser.add_argument('--num_iters', type=int, default=2000000, help='number of total iterations')
     parser.add_argument('--len_crop', type=int, default=128, help='dataloader output sequence length')
     parser.add_argument('--clip', type=int, default=1, help='clip value of gradient clip')
-    parser.add_argument('--model_id', type=str, default='test', help='model name')
+    parser.add_argument('--model_id', type=str, default='reb_stage3_nofixGpse_tune1', help='model name')
     
     # Logging and checkpointing.
     parser.add_argument('--log_step', type=int, default=10)
