@@ -1,6 +1,11 @@
 # FaceVC
 
-### training
+This is the official implementation for "Face-based Voice Conversion: Learning the Voice behind a Face" (FaceVC).
+
+### Data Preprocessing
+1. 
+
+### Training
 1. Create environment.
 ```bash
 $ python -m venv env
@@ -59,7 +64,7 @@ $ python main.py
 tensorboard --logdir log --host tunnel_host --port tunnel_port
 ```
 
-### testing
+### Testing
 1. Set configuration in ```test_conversion.py``` according to the training stage.
 ```python
 parser.add_argument('--stage', type=int, default=3)
