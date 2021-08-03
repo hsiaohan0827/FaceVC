@@ -8,19 +8,19 @@ This is the official implementation for "Face-based Voice Conversion: Learning t
 2. Prepare face embedding / speaker embedding / spectrogram of in-the-wild data.
 3. Set following path in ```data_loader_noisy.py```.
 ```python
-spk_lst = 
-root_face = 
-root_speech = 
-root_mel = 
+spk_lst = ''
+root_face = ''
+root_speech = ''
+root_mel = ''
 ```
 #### Lab-collected data
 1. Prepare a data list of all the training utterance path (for making speaker dictionary).
 2. Prepare speaker embedding / spectrogram of lab-collected data.
 3. Set following path in ```data_loader_clean.py```.
 ```python
-spk_lst = 
-root_speaker =
-root_mel = 
+spk_lst = ''
+root_speaker = ''
+root_mel = ''
 ```
 
 
@@ -32,7 +32,7 @@ $ source env/bin/activate
 $ pip install -r requirements.txt
 ```
 2. Set configuration in ```main.py``` according to the training stage.
-```python3
+```python
     parser.add_argument('--stage', type=int, default=3)
 
     # Model configuration.
@@ -76,14 +76,14 @@ $ python main.py
 
 4. Tensorboard
 ```
-tensorboard --logdir log --host tunnel_host --port tunnel_port
+$ tensorboard --logdir log --host tunnel_host --port tunnel_port
 ```
 
 ### Testing
 1. Set configuration in ```test_conversion.py``` according to the training stage.
 ```python
-parser.add_argument('--stage', type=int, default=3)
-parser.add_argument('--outdir', type=int, default=3)
+parser.add_argument('--stage', type=int, default=4)
+parser.add_argument('--outdir', type=str, default='reb_stage3_nofixGpse_tune1')
 
 # stage I  : fill in G_pse_path
 # stage II : fill in G_ref_path
