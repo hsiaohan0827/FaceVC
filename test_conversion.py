@@ -48,18 +48,15 @@ if os.path.exists(os.path.join('wav', config.outdir)) is False:
 spect_vc = []
 # train
 src_speaker_lst = ['p286_001.npy', 'p258_031.npy', 'p266_243.npy', 'p333_027.npy']
-# tgt_speaker_lst = ['0af00UcTOSc-00001.npy', '0C5UQbWzwg8-00001.npy', '0FQXicAGy5U-00001.npy', '0HEXx3SP8kk-00001.npy', '0ITHlySbhJE-00001.npy',\
-                   # '0akiEFwtkyA-00001.npy', '0d6iSvF1UmA-00001.npy', '0FkuRwU8HFc-00001.npy', '0JGarsZE1rk-00001.npy', '0N6cjPWqpSk-00001.npy',\
-                   # '01GWGmg5jn8-00001.npy', '03h0dNZoxr8-00001.npy', '05jJodDVJRQ-00002.npy', '06M8qY7Q74Y-00001.npy', '08ZWROqoTZo-00001.npy',\
-                   # '0SW0HFy9Et4-00001.npy', '0wpCZxiAQzw-00001.npy', '0ZhL7P7w3as-00001.npy', '1bXAkbCyjpo-00001.npy', '1BXYSGepx7Q-00001.npy']
-tgt_speaker_lst = ['MHN1gqrXMUM-00001.npy']
+tgt_speaker_lst = ['0af00UcTOSc-00001.npy', '0C5UQbWzwg8-00001.npy', '0FQXicAGy5U-00001.npy', '0HEXx3SP8kk-00001.npy', '0ITHlySbhJE-00001.npy',\
+                   '0akiEFwtkyA-00001.npy', '0d6iSvF1UmA-00001.npy', '0FkuRwU8HFc-00001.npy', '0JGarsZE1rk-00001.npy', '0N6cjPWqpSk-00001.npy',\
+                   '01GWGmg5jn8-00001.npy', '03h0dNZoxr8-00001.npy', '05jJodDVJRQ-00002.npy', '06M8qY7Q74Y-00001.npy', '08ZWROqoTZo-00001.npy',\
+                   '0SW0HFy9Et4-00001.npy', '0wpCZxiAQzw-00001.npy', '0ZhL7P7w3as-00001.npy', '1bXAkbCyjpo-00001.npy', '1BXYSGepx7Q-00001.npy']
 
 for i, src_speaker in enumerate(src_speaker_lst):
     src_speaker_mel = np.load(os.path.join('/mnt/hdd0/hsiaohan/vctk/VCTK-Corpus/spmel16', src_speaker.split('_')[0], src_speaker))
-    #spect_vc.append(('{}'.format(src_speaker), src_speaker_mel))
     for j, tgt_speaker in enumerate(tgt_speaker_lst):
         print(src_speaker + '>' + tgt_speaker)
-        #src_speaker_mel = np.load(os.path.join('mel_100', src_speaker))
         src_speaker_mel = np.load(os.path.join('/mnt/hdd0/hsiaohan/vctk/VCTK-Corpus/spmel16', src_speaker.split('_')[0], src_speaker))
         src_speaker_emb = np.load(os.path.join('/mnt/hdd0/hsiaohan/vctk/VCTK-Corpus/spk_emb16', src_speaker.split('_')[0]+'.npy'))
         tgt_speaker_emb = np.load(os.path.join('/mnt/hdd0/hsiaohan/lrs3/faceemb_512_mtcnn_margin50', tgt_speaker))
@@ -80,10 +77,6 @@ for i, src_speaker in enumerate(src_speaker_lst):
                 tgt_speaker_emb = G_face(None, None, tgt_speaker_emb, None, None)
                 tgt_speaker_emb = Warp(tgt_speaker_emb)
                 _, x_identic_psnt, _, _ = G_sph(src_speaker_mel, src_speaker_emb, tgt_speaker_emb, None, None)
-        if config.stage == 4:
-            with torch.no_grad():
-                tgt_speaker_emb = G_face(tgt_speaker_emb)
-                _, x_identic_psnt, _, _ = G_sph(src_speaker_mel, src_speaker_emb, tgt_speaker_emb, None)
                 
         if len_pad == 0:
             uttr_trg = x_identic_psnt.unsqueeze(0)[0, 0, :, :].cpu().numpy()

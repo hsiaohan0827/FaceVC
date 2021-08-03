@@ -1,7 +1,7 @@
 import os
 import argparse
 from solver_encoder import Solver
-# from data_loader_clean import get_loader_clean
+from data_loader_clean import get_loader_clean
 from data_loader_noisy import get_loader_noisy
 from torch.backends import cudnn
 
@@ -13,13 +13,13 @@ def main(config):
     cudnn.benchmark = True
 
     # Data loader
-    # vcc_loader_clean = get_loader_clean(config.batch_size, config.len_crop)
+    vcc_loader_clean = get_loader_clean(config.batch_size, config.len_crop)
     vcc_loader_noisy = get_loader_noisy(config.batch_size, config.len_crop)
     
-    if config.stage == 1 or config.stage == 3 or config.stage == 4:
+    if config.stage == 1 or config.stage == 3:
         solver = Solver(vcc_loader_noisy, config)
-    # elif config.stage == 2:
-        # solver = Solver(vcc_loader_clean, config)
+    elif config.stage == 2:
+        solver = Solver(vcc_loader_clean, config)
 
     solver.train()
         
@@ -27,11 +27,7 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--stage', type=int, default=4)
-
-    ### For training stage I, revise argument of line 39-44, 59-67 ###
-    ### For training stage II, revise argument of line 48-52, 59-67 ###
-    ### For training stage III, revise argument of line 39-44, 48-52, 56-67 ###
+    parser.add_argument('--stage', type=int, default=1)
 
     # Model configuration.
     ### Generator for stage I or pseudo generator for stage III ###
@@ -65,6 +61,8 @@ if __name__ == '__main__':
     # Logging and checkpointing.
     parser.add_argument('--log_step', type=int, default=10)
     parser.add_argument('--save_step', type=int, default=1000)
+    
+    # Data configuration.
 
     config = parser.parse_args()
     print(config)

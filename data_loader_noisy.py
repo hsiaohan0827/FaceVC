@@ -3,9 +3,11 @@ import torch
 import numpy as np
 import pickle 
 import os    
-       
-from multiprocessing import Process, Manager   
-
+          
+spk_lst = '20sp.txt'
+root_face = '/mnt/hdd0/hsiaohan/lrs3/faceemb_512_mtcnn_margin50/'
+root_speech = '/mnt/hdd0/hsiaohan/lrs3/spk_emb16/'
+root_mel = '/mnt/hdd0/hsiaohan/s2f/mel_clean/'
 
 class Utterances(data.Dataset):
     """Dataset class for the Utterances dataset."""
@@ -20,8 +22,9 @@ class Utterances(data.Dataset):
         print('Finished init the dataset...')
 
             
+    ### Make utterance dictionary of each speaker
     def make_data_dict(self):
-        with open('20sp.txt', 'r') as f:
+        with open(spk_lst, 'r') as f:
             lines = f.readlines()
             data = {}
             for line in lines:
@@ -36,15 +39,11 @@ class Utterances(data.Dataset):
         
     def __getitem__(self, index):
         # pick a random speaker
-        # dataset = self.train_dataset 
-        root_speaker = '/mnt/hdd0/hsiaohan/lrs3/faceemb_512_mtcnn_margin50/'
-        root_speech = '/mnt/hdd0/hsiaohan/lrs3/spk_emb16/'
-        root_mel = '/mnt/hdd0/hsiaohan/s2f/mel_clean/'
         speaker = self.speaker_lst[index]
         
         # pick random uttr with random crop
         a = np.random.randint(0, len(self.data_dict[speaker]))
-        emb_org = np.load(root_speaker+speaker+'-'+self.data_dict[speaker][a]+'.npy')
+        emb_org = np.load(root_face+speaker+'-'+self.data_dict[speaker][a]+'.npy')
         emb_sph = np.load(root_speech+speaker+'.npy')
         tmp = np.load(root_mel+speaker+'-'+self.data_dict[speaker][a]+'.npy')
 
@@ -60,16 +59,10 @@ class Utterances(data.Dataset):
         cand = np.random.choice(len(self.data_dict[speaker]), size=5, replace=False)
         ge2e_lst = []
         for spk in cand:
-            emb_sp = np.load(root_speaker+speaker+'-'+self.data_dict[speaker][spk]+'.npy')
+            emb_sp = np.load(root_face+speaker+'-'+self.data_dict[speaker][spk]+'.npy')
             ge2e_lst.append(emb_sp)
             
-        
-        # index_dif = np.random.randint(0, len(self.speaker_lst))
-        # speaker_dif = self.speaker_lst[index_dif]
-        # b = np.random.randint(0, len(self.data_dict[speaker_dif]))
-        # emb_dif = np.load(root_speaker+speaker_dif+'-'+self.data_dict[speaker_dif][b]+'.npy')
-            
-        return uttr, emb_org, np.array(ge2e_lst), emb_sph#, emb_dif
+        return uttr, emb_org, np.array(ge2e_lst), emb_sph
     
 
     def __len__(self):

@@ -3,9 +3,10 @@ import torch
 import numpy as np
 import pickle 
 import os    
-       
-from multiprocessing import Process, Manager   
 
+spk_lst = '/home/anita/data/vctk/vctk_20spk_lst.txt'
+root_speaker = '/home/anita/data/vctk/spk_emb16/'
+root_mel = '/home/anita/data/vctk/spmel16/'
 
 class Utterances(data.Dataset):
     """Dataset class for the Utterances dataset."""
@@ -19,9 +20,9 @@ class Utterances(data.Dataset):
         
         print('Finished init the dataset...')
 
-            
+    ### Make utterance dictionary of each speaker
     def make_data_dict(self):
-        with open('/home/anita/data/vctk/vctk_20spk_lst.txt', 'r') as f:
+        with open(spk_lst, 'r') as f:
             lines = f.readlines()
             data = {}
             for line in lines:
@@ -36,9 +37,6 @@ class Utterances(data.Dataset):
         
     def __getitem__(self, index):
         # pick a random speaker
-        # dataset = self.train_dataset 
-        root_speaker = '/home/anita/data/vctk/spk_emb16/'
-        root_mel = '/home/anita/data/vctk/spmel16/'
         speaker = self.speaker_lst[index]
         
         # pick random uttr with random crop
@@ -61,13 +59,7 @@ class Utterances(data.Dataset):
         #     emb_sp = np.load(root_speaker+speaker+'.npy')
         #     ge2e_lst.append(emb_sp)
             
-        # index_dif = np.random.randint(0, len(self.speaker_lst))
-
-        # speaker_dif = self.speaker_lst[index_dif]
-        # b = np.random.randint(0, len(self.data_dict[speaker_dif]))
-        # emb_dif = np.load(root_speaker+speaker_dif+'.npy')
-            
-        return uttr, emb_org#, np.array(ge2e_lst), emb_dif
+        return uttr, emb_org
     
 
     def __len__(self):
